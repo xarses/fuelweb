@@ -320,6 +320,12 @@ class BaseNodeTestCase(BaseTestCase):
         return re.findall('(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', ret_str)
 
     @logwrap
+    def get_cluster_block_devices(self, node_name):
+        remote = self._get_remote_for_node(node_name)
+        ret = remote.check_call('/usr/bin/lsblk')
+        return ''.join(ret['stdout'])
+
+    @logwrap
     def assert_cluster_floating_list(self, node_name, expected_ips):
         current_ips = self.get_cluster_floating_list(node_name)
         self.assertEqual(set(expected_ips), set(current_ips))
