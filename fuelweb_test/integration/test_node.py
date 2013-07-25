@@ -264,5 +264,58 @@ class TestNode(BaseNodeTestCase):
         self.assert_cluster_floating_list(
             nodes_dict['compute'][0], expected_ips)
 
+    @snapshot_errors
+    @logwrap
+    @fetch_logs
+    def test_node_disk_sizes(self):
+        # all nodes have 3 identical disks with same size
+        cluster_name = 'node disks'
+        nodes_dict = {'controller': ['slave-01'],
+                      'compute': ['slave-02'],
+                      'cinder': ['slave-03']}
+
+        self.bootstrap_nodes(self.nodes().slaves[:3])
+
+        # assert /api/nodes
+        nailgun_nodes = self.client.list_nodes()
+        for node in nailgun_nodes:
+            for disk in node['meta']['disks']:
+                self.assertEqual(disk['size'], 21474836480, 'Disk size')
+
+        notifications = self.client.get_notifications()
+        for node in nailgun_nodes:
+            # assert /api/notifications
+            for notification in notifications:
+                if notification['node_id'] == node['id']:
+                    self.assertIn('64.0 GB HDD', notification['message'])
+
+            # assert disks
+            disks = self.client.get_done_disks(node['id'])
+            for disk in disks:
+                self.assertEqual(disk['size'], 19916, 'Disk size')
+
+        # deploy the cluster
+        cluster_id = self.create_cluster(name=cluster_name)
+        self.update_nodes(cluster_id, nodes_dict, True, False)
+        task = self._launch_provisioning(cluster_id)
+        self.assertTaskSuccess(task)
+
+        # assert node disks after deployment
+        for role, nodes_names in nodes_dict.iteritems():
+            for node_name in nodes_names:
+                str_block_devices = self.get_cluster_block_devices(node_name)
+                self.assertRegexpMatches(
+                    str_block_devices,
+                    'vda\s+252:0\s+0\s+20G\s+0\s+disk'
+                )
+                self.assertRegexpMatches(
+                    str_block_devices,
+                    'vdb\s+252:16\s+0\s+20G\s+0\s+disk'
+                )
+                self.assertRegexpMatches(
+                    str_block_devices,
+                    'vdc\s+252:32\s+0\s+20G\s+0\s+disk'
+                )
+
 if __name__ == '__main__':
     unittest.main()
