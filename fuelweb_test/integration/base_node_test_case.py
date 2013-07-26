@@ -322,7 +322,7 @@ class BaseNodeTestCase(BaseTestCase):
     @logwrap
     def get_cluster_block_devices(self, node_name):
         remote = self._get_remote_for_node(node_name)
-        ret = remote.check_call('/usr/bin/lsblk')
+        ret = remote.check_call('/bin/lsblk')
         return ''.join(ret['stdout'])
 
     @logwrap
