@@ -292,7 +292,7 @@ class TestNode(BaseNodeTestCase):
             # assert disks
             disks = self.client.get_done_disks(node['id'])
             for disk in disks:
-                self.assertEqual(disk['size'], 19916, 'Disk size')
+                self.assertEqual(disk['size'], 19980, 'Disk size')
 
         # deploy the cluster
         cluster_id = self.create_cluster(name=cluster_name)
