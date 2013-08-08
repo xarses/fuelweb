@@ -264,5 +264,29 @@ class TestNode(BaseNodeTestCase):
         self.assert_cluster_floating_list(
             nodes_dict['compute'][0], expected_ips)
 
+    @snapshot_errors
+    @logwrap
+    @fetch_logs
+    def test_boot_volumes(self):
+        cluster_name = 'boot_volumes'
+        nodes = {'controller': ['slave-01'],
+                 'compute': ['slave-02'],
+                 'cinder': ['slave-03']}
+        self.clean_clusters()
+        cluster_id = self.create_cluster(name=cluster_name)
+        self._basic_provisioning(cluster_id, nodes)
+
+        for i in range(2):
+            for node in self.nodes():
+                node.shutdown()
+                for disk in node.disk_devices:
+                    if disk.boot_order < 3:
+                        disk.boot_order += 1
+                    else:
+                        disk.boot_order = 1
+                    disk.save()
+                node.update_devices()
+                node.start()
+
 if __name__ == '__main__':
     unittest.main()
