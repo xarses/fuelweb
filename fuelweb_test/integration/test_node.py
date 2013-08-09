@@ -290,9 +290,9 @@ class TestNode(BaseNodeTestCase):
                 node.update_devices()
             # assert if nodes back online
             online_flag_list = \
-                [n['online'] for n in self.nailgun_nodes(nodes)]
-            wait(lambda: all(online_flag_list), 15, 600)
-            self.assertTrue(all(online_flag_list), 'Nodes are online')
+                lambda: [n['online'] for n in self.nailgun_nodes(nodes)]
+            wait(lambda: all(online_flag_list()), 15, 600)
+            self.assertTrue(all(online_flag_list()), 'Nodes are online')
 
 if __name__ == '__main__':
     unittest.main()
