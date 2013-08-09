@@ -269,15 +269,17 @@ class TestNode(BaseNodeTestCase):
     @fetch_logs
     def test_boot_volumes(self):
         cluster_name = 'boot_volumes'
-        nodes = {'controller': ['slave-01'],
-                 'compute': ['slave-02'],
-                 'cinder': ['slave-03']}
+        nodes_dict = {'controller': ['slave-01'],
+                      'compute': ['slave-02'],
+                      'cinder': ['slave-03']}
         self.clean_clusters()
         cluster_id = self.create_cluster(name=cluster_name)
-        self._basic_provisioning(cluster_id, nodes)
+        self._basic_provisioning(cluster_id, nodes_dict)
 
+        nodes = self.nodes().slaves[:3]
         for i in range(2):
-            for node in self.nodes():
+            # change boot order
+            for node in nodes:
                 node.shutdown()
                 for disk in node.disk_devices:
                     if disk.boot_order < 3:
@@ -286,7 +288,11 @@ class TestNode(BaseNodeTestCase):
                         disk.boot_order = 1
                     disk.save()
                 node.update_devices()
-                node.start()
+            # assert if nodes back online
+            online_flag_list = \
+                [n['online'] for n in self.nailgun_nodes(nodes)]
+            wait(lambda: all(online_flag_list), 15, 600)
+            self.assertTrue(all(online_flag_list), 'Nodes are online')
 
 if __name__ == '__main__':
     unittest.main()
