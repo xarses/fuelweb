@@ -277,20 +277,23 @@ class TestNode(BaseNodeTestCase):
         self._basic_provisioning(cluster_id, nodes_dict)
 
         nodes = self.nodes().slaves[:3]
-        for i in range(2):
+        online_flag_list = \
+            lambda: [n['online'] for n in self.nailgun_nodes(nodes)]
+        boot_config_list = [{'sda': None, 'sdb': 1, 'sdc': None},
+                            {'sda': None, 'sdb': None, 'sdc': 1}]
+        for boot_config in boot_config_list:
+            # turn off nodes and wait for offline status
+            for node in nodes:
+                node.destroy()
+            wait(lambda: not(all(online_flag_list())), 15, 600)
             # change boot order
             for node in nodes:
-                node.shutdown()
                 for disk in node.disk_devices:
-                    if disk.boot_order < 3:
-                        disk.boot_order += 1
-                    else:
-                        disk.boot_order = 1
+                    disk.boot_order = boot_config[disk.target_dev]
                     disk.save()
-                node.update_devices()
+                node.define()
+                node.start()
             # assert if nodes back online
-            online_flag_list = \
-                lambda: [n['online'] for n in self.nailgun_nodes(nodes)]
             wait(lambda: all(online_flag_list()), 15, 600)
             self.assertTrue(all(online_flag_list()), 'Nodes are online')
 
