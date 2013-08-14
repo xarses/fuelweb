@@ -19,7 +19,7 @@ import logging
 import os
 import time
 import urllib2
-from fuelweb_test.settings import LOGS_DIR
+from fuelweb_test.settings import LOGS_DIR, EMPTY_SNAPSHOT
 
 
 def save_logs(ip, filename):
@@ -70,6 +70,47 @@ def snapshot_errors(func):
                 )
             raise
     return wrapper
+
+
+def snapshot_create(name):
+    """ Decorator to snapshot environment when test is finished.
+    """
+    def actual_decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwagrs):
+            try:
+                res = func(*args, **kwagrs)
+                description = "Environment was created by'%s'" % func.__name__
+                logging.debug("Snapshot %s %s" % (name, description))
+                if args[0].ci() is not None:
+                    args[0].ci().environment().snapshot(
+                        name=name[-50:],
+                        description=description,
+                        force=True,
+                    )
+                return res
+            except:
+                raise
+        return wrapper
+    return actual_decorator
+
+
+def snapshot_revert(name=EMPTY_SNAPSHOT):
+    """ Revert snapshot of an environment
+    """
+    def actual_decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwagrs):
+            try:
+                if name == EMPTY_SNAPSHOT:
+                    args[0].ci().get_empty_state()
+                else:
+                    args[0].ci().get_state(name)
+                return func(*args, **kwagrs)
+            except:
+                raise
+        return wrapper
+    return actual_decorator
 
 
 def debug(logger):
