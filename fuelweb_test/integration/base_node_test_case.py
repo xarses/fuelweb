@@ -162,12 +162,29 @@ class BaseNodeTestCase(BaseTestCase):
         self.assertEquals('error', self._task_wait(task, timeout)['status'])
 
     @logwrap
+    def assertOSTFRunSuccess(self, cluster_id, timeout=10 * 60):
+        set_result_list = self._ostf_test_wait(cluster_id, timeout)
+        test_passed_list = []
+        for set_result in set_result_list:
+            test_passed_list += [test['status'] == 'success' for test in set_result['tests']]
+        self.assertTrue(all(test_passed_list))
+
+    @logwrap
     def _task_wait(self, task, timeout):
         wait(
             lambda: self.client.get_task(
                 task['id'])['status'] != 'running',
             timeout=timeout)
         return self.client.get_task(task['id'])
+
+    @logwrap
+    def _ostf_test_wait(self, cluster_id, timeout):
+        wait(
+            lambda: all([run['status'] == 'finished'
+                         for run in
+                         self.client.get_ostf_test_run(cluster_id)]),
+            timeout=timeout)
+        return self.client.get_ostf_test_run(cluster_id)
 
     @logwrap
     def _upload_sample_release(self):

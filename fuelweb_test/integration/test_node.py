@@ -264,5 +264,38 @@ class TestNode(BaseNodeTestCase):
         self.assert_cluster_floating_list(
             nodes_dict['compute'][0], expected_ips)
 
+    @snapshot_errors
+    @logwrap
+    @fetch_logs
+    def test_ostf(self):
+        cluster_name = 'test_ostf'
+        nodes = {
+            'controller': ['slave-01'],
+            'compute': ['slave-02'],
+            'cinder': ['slave-03']
+        }
+        set_names = ['fuel_smoke', 'fuel_sanity']
+
+        self.clean_clusters()
+        cluster_id = self.create_cluster(name=cluster_name)
+        self._basic_provisioning(cluster_id, nodes)
+
+        # assert test sets
+        test_sets = self.client.get_ostf_test_sets()
+        self.assertEqual(test_sets[0]['id'], set_names[0])
+        self.assertEqual(test_sets[1]['id'], set_names[1])
+
+        # assert tests count in each set
+        tests = self.client.get_ostf_tests()
+        tests_count_in_set = \
+            lambda tests, set_id: len(
+                filter(lambda x: x['testset'] == set_id, tests))
+        self.assertEqual(tests_count_in_set(tests, set_names[0]), 11)
+        self.assertEqual(tests_count_in_set(tests, set_names[1]), 11)
+
+        # run OSTF tests
+        self.client.ostf_run_tests(cluster_id, set_names)
+        self.assertOSTFRunSuccess(cluster_id)
+
 if __name__ == '__main__':
     unittest.main()
