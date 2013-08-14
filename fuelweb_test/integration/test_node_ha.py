@@ -17,7 +17,7 @@ import logging
 import unittest
 from fuelweb_test.integration.base_node_test_case import BaseNodeTestCase
 from fuelweb_test.integration.decorators import snapshot_errors, \
-    debug, fetch_logs
+    debug, fetch_logs, snapshot_revert
 
 logging.basicConfig(
     format=':%(lineno)d: %(asctime)s %(message)s',
@@ -32,6 +32,7 @@ class TestNode(BaseNodeTestCase):
     @snapshot_errors
     @logwrap
     @fetch_logs
+    @snapshot_revert()
     def test_ha_cluster_vlan(self):
         cluster_name = 'ha_vlan'
         nodes = {

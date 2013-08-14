@@ -30,8 +30,6 @@ logwrap = debug(logger)
 class BaseNodeTestCase(BaseTestCase):
 
     def setUp(self):
-        if CLEAN:
-            self.ci().get_empty_state()
         self.client = NailgunClient(self.get_admin_node_ip())
 
     @logwrap

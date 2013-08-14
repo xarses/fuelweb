@@ -17,7 +17,7 @@ import logging
 import unittest
 from fuelweb_test.integration.base_node_test_case import BaseNodeTestCase
 from fuelweb_test.integration.decorators import snapshot_errors, \
-    debug, fetch_logs, snapshot_revert
+    debug, fetch_logs, snapshot_create, snapshot_revert
 
 logging.basicConfig(
     format=':%(lineno)d: %(asctime)s %(message)s',
@@ -28,25 +28,46 @@ logger = logging.getLogger(__name__)
 logwrap = debug(logger)
 
 
-class TestNode(BaseNodeTestCase):
+class TestDeployment(BaseNodeTestCase):
+    """
+        This test class contains tests for various deployment
+        configurations. The tests do not perform any additional
+        checks / verification. Resulting environments will be
+        used in upcoming tests.
+
+        Use 'snapshot_create' decorator to revert virtual
+        machine to appropriate snapshot
+    """
+
     @snapshot_errors
     @logwrap
     @fetch_logs
     @snapshot_revert()
-    def test_ha_cluster_flat(self):
-        cluster_name = 'ha_flat'
+    @snapshot_create('simple_flat_controller_compute')
+    def test_simple_flat(self):
+        cluster_name = 'simple_flat_controller_compute'
         nodes = {
-            'controller': ['slave-01', 'slave-02', 'slave-03'],
-            'compute': ['slave-04', 'slave-05']
+            'controller': ['slave-01'],
+            'compute': ['slave-02']
         }
-        self.clean_clusters()
         cluster_id = self.create_cluster(name=cluster_name)
         self._basic_provisioning(cluster_id, nodes)
-        self.assertClusterReady(
-            'slave-01', smiles_count=16, networks_count=1, timeout=300)
-        self.get_ebtables(cluster_id, self.nodes().slaves[:5]).restore_vlans()
-        task = self._run_network_verify(cluster_id)
-        self.assertTaskSuccess(task, 60 * 2)
+
+    @snapshot_errors
+    @logwrap
+    @fetch_logs
+    @snapshot_revert()
+    @snapshot_create('simple_with_cinder')
+    def test_simple_with_cinder(self):
+        cluster_name = 'simple_with_cinder'
+        nodes = {
+            'controller': ['slave-01'],
+            'compute': ['slave-02'],
+            'cinder': ['slave-03']
+        }
+        cluster_id = self.create_cluster(name=cluster_name)
+        self._basic_provisioning(cluster_id, nodes)
+
 
 if __name__ == '__main__':
     unittest.main()
