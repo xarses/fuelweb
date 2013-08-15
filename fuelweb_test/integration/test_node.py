@@ -19,7 +19,7 @@ from devops.helpers.helpers import wait
 from fuelweb_test.helpers import Ebtables
 from fuelweb_test.integration.base_node_test_case import BaseNodeTestCase
 from fuelweb_test.integration.decorators import snapshot_errors, \
-    debug, fetch_logs, snapshot_revert
+    debug, fetch_logs
 from fuelweb_test.settings import EMPTY_SNAPSHOT
 
 logging.basicConfig(
@@ -34,34 +34,34 @@ logwrap = debug(logger)
 class TestNode(BaseNodeTestCase):
     @logwrap
     @fetch_logs
-    @snapshot_revert()
     def test_release_upload(self):
+        self.prepare_environment()
         self._upload_sample_release()
 
     @logwrap
     @fetch_logs
-    @snapshot_revert()
     def test_http_returns_no_error(self):
+        self.prepare_environment()
         self.client.get_root()
 
     @logwrap
     @fetch_logs
-    @snapshot_revert()
     def test_create_empty_cluster(self):
+        self.prepare_environment()
         self.create_cluster(name='empty')
 
     @snapshot_errors
     @logwrap
     @fetch_logs
-    @snapshot_revert()
     def test_node_deploy(self):
+        self.prepare_environment()
         self.bootstrap_nodes(self.devops_nodes_by_names(['slave-01']))
 
     @snapshot_errors
     @logwrap
     @fetch_logs
-    @snapshot_revert()
     def test_updating_nodes_in_cluster(self):
+        self.prepare_environment()
         cluster_id = self.create_cluster(name='empty')
         nodes = {'controller': ['slave-01']}
         self.bootstrap_nodes(self.devops_nodes_by_names(nodes['controller']))
@@ -70,8 +70,8 @@ class TestNode(BaseNodeTestCase):
     @snapshot_errors
     @logwrap
     @fetch_logs
-    @snapshot_revert()
     def test_one_node_provisioning(self):
+        self.prepare_environment()
         cluster_id = self.create_cluster(name="provision")
         self._basic_provisioning(
             cluster_id=cluster_id,
@@ -81,10 +81,11 @@ class TestNode(BaseNodeTestCase):
     @snapshot_errors
     @logwrap
     @fetch_logs
-    @snapshot_revert(name='simple_flat_controller_compute')
     def test_simple_cluster_flat(self):
-        cluster_id = \
-            self.client.get_cluster_id('simple_flat_controller_compute')
+        cluster_id = self.prepare_environment(settings={
+            'controller': ['slave-01'],
+            'compute': ['slave-02']
+        })
         self.assertClusterReady(
             'slave-01', smiles_count=6, networks_count=1, timeout=300)
         self.get_ebtables(cluster_id, self.nodes().slaves[:2]).restore_vlans()
@@ -94,8 +95,8 @@ class TestNode(BaseNodeTestCase):
     @snapshot_errors
     @logwrap
     @fetch_logs
-    @snapshot_revert()
     def test_simple_cluster_vlan(self):
+        self.prepare_environment()
         cluster_name = 'simple_vlan'
         nodes = {'controller': ['slave-01'], 'compute': ['slave-02']}
         cluster_id = self.create_cluster(name=cluster_name)
@@ -110,8 +111,11 @@ class TestNode(BaseNodeTestCase):
     @snapshot_errors
     @logwrap
     @fetch_logs
-    @snapshot_revert(name='simple_flat_controller_compute')
     def test_network_config(self):
+        self.prepare_environment(settings={
+            'controller': ['slave-01'],
+            'compute': ['slave-02']
+        })
         slave = self.nodes().slaves[0]
         node = self.get_node_by_devops_node(slave)
         self.assertNetworkConfiguration(node)
@@ -119,11 +123,12 @@ class TestNode(BaseNodeTestCase):
     @snapshot_errors
     @logwrap
     @fetch_logs
-    @snapshot_revert(name='simple_flat_controller_compute')
     def test_node_deletion(self):
+        cluster_id = self.prepare_environment(settings={
+            'controller': ['slave-01'],
+            'compute': ['slave-02']
+        })
         nodes_dict = {'controller': ['slave-01']}
-        cluster_id = \
-            self.client.get_cluster_id('simple_flat_controller_compute')
         nailgun_nodes = self.update_nodes(cluster_id, nodes_dict, False, True)
         task = self.deploy_cluster(cluster_id)
         self.assertTaskSuccess(task)
@@ -132,8 +137,8 @@ class TestNode(BaseNodeTestCase):
     @snapshot_errors
     @logwrap
     @fetch_logs
-    @snapshot_revert()
     def test_network_verify_with_blocked_vlan(self):
+        self.prepare_environment()
         cluster_name = 'net_verify'
         cluster_id = self.create_cluster(name=cluster_name)
 
@@ -155,8 +160,8 @@ class TestNode(BaseNodeTestCase):
     @snapshot_errors
     @logwrap
     @fetch_logs
-    @snapshot_revert()
     def test_multinic_bootstrap_booting(self):
+        self.prepare_environment()
         slave = self.nodes().slaves[0]
         mac_addresses = [interface.mac_address for interface in
                          slave.interfaces.filter(network__name='internal')]
@@ -177,18 +182,22 @@ class TestNode(BaseNodeTestCase):
     @snapshot_errors
     @logwrap
     @fetch_logs
-    @snapshot_revert(name='simple_with_cinder')
     def test_simple_cluster_with_cinder(self):
+        self.prepare_environment(settings={
+            'controller': ['slave-01'],
+            'compute': ['slave-02'],
+            'cinder': ['slave-03']
+        })
         self.assertClusterReady(
             'slave-01', smiles_count=6, networks_count=1, timeout=300)
 
     @snapshot_errors
     @logwrap
     @fetch_logs
-    @snapshot_revert(name='simple_flat_controller_compute')
     def test_add_compute_node(self):
-        cluster_id = \
-            self.client.get_cluster_id('simple_flat_controller_compute')
+        cluster_id = self.prepare_environment(
+            name='add compute node',
+            settings={'controller': ['slave-01'], 'compute': ['slave-02']})
 
         self.bootstrap_nodes(self.nodes().slaves[2:3])
         self.update_nodes(cluster_id, {'compute': [
@@ -207,8 +216,8 @@ class TestNode(BaseNodeTestCase):
     @snapshot_errors
     @logwrap
     @fetch_logs
-    @snapshot_revert()
     def test_floating_ips(self):
+        self.prepare_environment()
         cluster_name = 'floating_ips'
         nodes_dict = {
             'controller': ['slave-01'],
