@@ -42,13 +42,13 @@ class RPCConsumer(ConsumerMixin):
         callback = getattr(self.receiver, body["method"])
         try:
             callback(**body["args"])
+            db().commit()
         except Exception as exc:
             logger.error(traceback.format_exc())
             db().rollback()
         finally:
-            db().commit()
             db().expire_all()
-        msg.ack()
+            msg.ack()
 
 
 class RPCKombuThread(threading.Thread):
