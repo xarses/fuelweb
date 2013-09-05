@@ -409,8 +409,7 @@ class Disk(object):
                 self.create_pv({"id": name}, size)
 
     def set_partition_size(self, name, size):
-        """
-        Set partition size
+        """Set partition size
         """
         for volume in self.volumes:
             if volume.get('type') == 'partition' and \
@@ -492,8 +491,7 @@ class VolumeManager(object):
         self.__logger('Initialized with disks: %s' % self.disks)
 
     def set_volume_size(self, disk_id, volume_name, size):
-        """
-        Set size of volume
+        """Set size of volume
         """
         self.__logger('Update volume size for disk=%s volume_name=%s size=%s' %
                       (disk_id, volume_name, size))
@@ -524,8 +522,7 @@ class VolumeManager(object):
         return self.volumes
 
     def get_space_type(self, volume_name):
-        """
-        Get type of space which represents on disk
+        """Get type of space which represents on disk
         as volume with volume_name
         """
         for volume in self.allowed_volumes:
