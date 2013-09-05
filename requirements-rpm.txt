@@ -29,7 +29,7 @@ c-ares19-1.9.1-4.el6.3
 ceilometer-2013.1-4
 centos-release-6-4.el6.centos.10
 ceph-0.61.8-0.el6
-ceph-deploy-1.0-0
+ceph-deploy-1.2.3-0
 ceph-radosgw-0.61.8-0.el6
 ceph-test-0.61.8-0.el6
 cirros-testvm-0.3.0-3
@@ -281,6 +281,7 @@ puppet-server-2.7.19-1.el6
 puppetdb-1.2.0-1.el6
 puppetdb-terminus-1.2.0-1.el6
 puppetlabs-release-6-6
+pushy-0.5.3-1
 pygobject2-2.20.0-5.el6
 pyparsing-1.5.6-1.el6
 pyparsing-doc-1.5.6-1.el6
@@ -353,7 +354,6 @@ python-paste-deploy1.5-1.5.0-5.el6
 python-pbr-0.5.11-2.el6
 python-pip-0.8-1.el6
 python-prettytable-0.6.1-1.el6
-python-pushy-0.5.1-6.1
 python-py-1.4.15-1.el6
 python-pygments-1.1.1-1.el6
 python-pyudev-0.15-1.el6
