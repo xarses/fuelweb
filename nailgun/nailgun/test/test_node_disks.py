@@ -286,7 +286,7 @@ class TestNodeVolumesInformationHandler(BaseHandlers):
     def test_volumes_information_for_ceph_role(self):
         node_db = self.create_node('ceph-osd')
         response = self.get(node_db.id)
-        self.check_volumes(response, ['os', 'ceph'])
+        self.check_volumes(response, ['os', 'ceph', 'ceph-journal'])
 
 
 class TestVolumeManager(BaseHandlers):
@@ -522,7 +522,7 @@ class TestFixtures(BaseHandlers):
         openstack = self.env.read_fixtures(
             ('openstack',))[0]['fields']['volumes_metadata']['volumes']
         redhat = self.env.read_fixtures(
-            ('redhat',))[0]['fields']['volumes_metadata']['volumes']
+            ('openstack',))[1]['fields']['volumes_metadata']['volumes']
 
         return [only_vg(openstack), only_vg(redhat)]
 
