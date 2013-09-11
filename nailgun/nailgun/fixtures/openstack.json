@@ -274,7 +274,7 @@
                     },
                     "storage": {
                         "cinder": {
-                            "value": "lvm",
+                            "value": "ceph",
                             "values": [
                                 {
                                     "data": "ceph",
@@ -292,7 +292,7 @@
                             "type": "radio"
                         },
                         "glance": {
-                            "value": "swift",
+                            "value": "ceph",
                             "values": [
                                 {
                                     "data": "ceph",
@@ -307,6 +307,24 @@
                             ],
                             "label": "Storage backend for Glance",
                             "weight": 40,
+                            "type": "radio"
+                        },
+                        "object": {
+                            "value": "ceph",
+                            "values": [
+                                {
+                                    "data": "ceph",
+                                    "display_name": "Ceph",
+                                    "description": ""
+                                },
+                                {
+                                    "data": "swift",
+                                    "display_name": "Swift",
+                                    "description": ""
+                                }
+                            ],
+                            "label": "Object storage API backend",
+                            "weight": 50,
                             "type": "radio"
                         }
                     }
@@ -972,7 +990,7 @@
                     },
                     "storage": {
                         "cinder": {
-                            "value": "lvm",
+                            "value": "ceph",
                             "values": [
                                 {
                                     "data": "ceph",
@@ -990,7 +1008,7 @@
                             "type": "radio"
                         },
                         "glance": {
-                            "value": "swift",
+                            "value": "ceph",
                             "values": [
                                 {
                                     "data": "ceph",
@@ -1005,6 +1023,24 @@
                             ],
                             "label": "Storage backend for Glance",
                             "weight": 40,
+                            "type": "radio"
+                        },
+                        "object": {
+                            "value": "ceph",
+                            "values": [
+                                {
+                                    "data": "ceph",
+                                    "display_name": "Ceph",
+                                    "description": ""
+                                },
+                                {
+                                    "data": "swift",
+                                    "display_name": "Swift",
+                                    "description": ""
+                                }
+                            ],
+                            "label": "Object storage API backend",
+                            "weight": 50,
                             "type": "radio"
                         }
                     }
