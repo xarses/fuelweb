@@ -48,6 +48,11 @@ from nailgun.api.handlers.node import NodeCollectionHandler
 from nailgun.api.handlers.node import NodeHandler
 from nailgun.api.handlers.node import NodesAllocationStatsHandler
 
+from nailgun.api.handlers.network import NetworkGroupHandler
+from nailgun.api.handlers.network import NetworkGroupNodeHandler
+from nailgun.api.handlers.network import NetworkGroupAssignHandler
+from nailgun.api.handlers.network import NetworkGroupCollectionHandler
+
 from nailgun.api.handlers.node import NodeCollectionNICsDefaultHandler
 from nailgun.api.handlers.node import NodeCollectionNICsHandler
 from nailgun.api.handlers.node import NodeNICsDefaultHandler
@@ -123,6 +128,15 @@ urls = (
     ProvisionSelectedNodes,
     r'/clusters/(?P<cluster_id>\d+)/deploy/?$',
     DeploySelectedNodes,
+
+    r'/clusters/(?P<cluster_id>\d+)/networks/?$',
+    NetworkGroupCollectionHandler,
+    r'/networks/(?P<net_id>\d+)/?$',
+    NetworkGroupHandler,
+    r'/networks/(?P<net_id>\d+)/allow/?$',
+    NetworkGroupNodeHandler,
+    r'/networks/(?P<net_id>\d+)/assign/?$',
+    NetworkGroupAssignHandler,
 
     r'/nodes/?$',
     NodeCollectionHandler,

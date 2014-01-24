@@ -120,6 +120,11 @@ class Node(Base):
                               order_by="NodeNICInterface.name")
 
     @property
+    def allowed_networks(self):
+        nets = [n.allowed_networks for n in self.interfaces]
+        return [n.id for n in nets[0]]
+
+    @property
     def uid(self):
         return str(self.id)
 

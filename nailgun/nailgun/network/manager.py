@@ -176,17 +176,14 @@ class NetworkManager(object):
                     )
                 )
 
-        network = db().query(NetworkGroup).\
-            filter(NetworkGroup.cluster_id == cluster_id).\
-            filter_by(name=network_name).first()
-
-        if not network:
-            raise errors.AssignIPError(
-                u"Network '%s' for cluster_id=%s not found." %
-                (network_name, cluster_id)
-            )
-
         for node_id in nodes_ids:
+            net = cls.get_node_network_by_netname(node_id, network_name)
+            network = db().query(NetworkGroup).filter_by(id=net['id']).first()
+            if not network:
+                raise errors.AssignIPError(
+                    u"Network '%s' for node_id=%s not found." %
+                    (network_name, node_id)
+                )
             node_ips = imap(
                 lambda i: i.ip_addr,
                 cls._get_ips_except_admin(
@@ -440,6 +437,7 @@ class NetworkManager(object):
                 netmask = str(IPNetwork(net.cidr).netmask)
 
             network_data.append({
+                'id': net.id,
                 'name': net.name,
                 'vlan': net.vlan_start,
                 'ip': ip.ip_addr + '/' + prefix,
@@ -557,6 +555,8 @@ class NetworkManager(object):
         # However it will end up with errors if we precreate vlans in VLAN mode
         #   in fixed network. We are skipping fixed nets in Vlan mode.
         for net in nets.order_by(NetworkGroup.id).all():
+            if net.id not in node_db.allowed_networks:
+                continue
             interface = cls._get_interface_by_network_name(
                 node_db,
                 net.name

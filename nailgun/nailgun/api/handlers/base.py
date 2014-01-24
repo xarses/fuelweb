@@ -129,7 +129,7 @@ class JSONHandler(object):
         elif len(args) > 0:
             obj = db().query(model).get(args[0])
         else:
-            obj = db().query(model).filter(**kwargs).all()
+            obj = db().query(model).filter_by(**kwargs).all()
         if not obj:
             if log_404:
                 getattr(logger, log_404[0])(log_404[1])
