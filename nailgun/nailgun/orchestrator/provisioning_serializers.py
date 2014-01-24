@@ -95,7 +95,7 @@ class ProvisioningSerializer(object):
         interfaces_extra = {}
         net_manager = NetworkManager
         admin_ip = net_manager.get_admin_ip_for_node(node)
-        admin_netmask = net_manager.get_admin_network_group().netmask
+        admin_netmask = net_manager.get_admin_network_group(node_id=node.id).netmask
 
         for interface in node.interfaces:
             name = interface.name

@@ -167,6 +167,10 @@ class DeploymentMultinodeSerializer(object):
         node_attrs.update(
             cls.get_net_provider_serializer(node.cluster).get_node_attrs(node))
 
+        node_attrs.update(
+            cls.get_net_provider_serializer(node.cluster).node_network_ranges(node)
+        )
+
         return node_attrs
 
     @classmethod
@@ -306,7 +310,6 @@ class NetworkDeploymentSerializer(object):
     def get_common_attrs(cls, cluster, attrs):
         """Cluster network attributes."""
         common = cls.network_provider_cluster_attrs(cluster)
-        common.update(cls.network_ranges(cluster))
         common.update({'master_ip': settings.MASTER_IP})
         common['nodes'] = deepcopy(attrs['nodes'])
 
@@ -362,6 +365,22 @@ class NetworkDeploymentSerializer(object):
         return attrs
 
     @classmethod
+    def node_network_ranges(cls, node):
+        """Returns ranges for network groups
+        except range for public network for each node
+        """
+        ng_db = db().query(NetworkGroup).filter_by(rack_id=node.rack_id).all()
+        attrs = {}
+        for net in ng_db:
+            net_name = net.name + '_network_range'
+            if net.meta.get("render_type") == 'ip_ranges':
+                attrs[net_name] = cls.get_ip_ranges_first_last(net)
+            elif net.meta.get("render_type") == 'cidr' and net.cidr:
+                attrs[net_name] = net.cidr
+
+        return attrs
+
+    @classmethod
     def get_ip_ranges_first_last(cls, network_group):
         """Get all ip ranges in "10.0.0.0-10.0.0.255" format
         """
@@ -396,7 +415,7 @@ class NetworkDeploymentSerializer(object):
         admin_ip = IPNetwork(admin_ip)
 
         # Assign prefix from admin network
-        admin_net = IPNetwork(network_manager.get_admin_network_group().cidr)
+        admin_net = IPNetwork(network_manager.get_admin_network_group(node_id=node.id).cidr)
         admin_ip.prefixlen = admin_net.prefixlen
 
         return str(admin_ip)
@@ -712,6 +731,10 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             attrs['endpoints'][brname]['IP'] = [netgroup['ip']]
             netgroups[ngname] = netgroup
         attrs['endpoints']['br-ex']['gateway'] = netgroups['public']['gateway']
+        if netgroups['management'].get('gateway'):
+            attrs['endpoints']['br-mgmt']['gateway'] = netgroups['management']['gateway']
+        if netgroups['storage'].get('gateway'):
+            attrs['endpoints']['br-storage']['gateway'] = netgroups['storage']['gateway']
 
         # Connect interface bridges to network bridges.
         for ngname, brname in netgroup_mapping:
@@ -759,8 +782,10 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             )
 
         # Fill up all about fuelweb-admin network.
+        admin_net = nm.get_node_network_by_netname(node.id, 'fuelweb_admin')
         attrs['endpoints'][node.admin_interface.name] = {
-            "IP": [cls.get_admin_ip_w_prefix(node)]
+            "IP": [cls.get_admin_ip_w_prefix(node)],
+            "gateway": admin_net.get('gateway')
         }
         attrs['roles']['fw-admin'] = node.admin_interface.name
 

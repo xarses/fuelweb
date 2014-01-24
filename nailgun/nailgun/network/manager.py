@@ -61,7 +61,7 @@ class NetworkManager(object):
         db().commit()
 
     @classmethod
-    def get_admin_network_group_id(cls, fail_if_not_found=True):
+    def get_admin_network_group_id(cls, fail_if_not_found=True, node_id=None):
         '''Method for receiving Admin NetworkGroup ID.
 
         :param fail_if_not_found: Raise an error
@@ -70,9 +70,20 @@ class NetworkManager(object):
         :returns: Admin NetworkGroup ID or None.
         :raises: errors.AdminNetworkNotFound
         '''
-        admin_ng = db().query(NetworkGroup).filter_by(
+        admin_ngs = db().query(NetworkGroup).filter_by(
             name="fuelweb_admin"
-        ).first()
+        ).all()
+        admin_ng = None
+
+        if node_id:
+            node_db = db().query(Node).get(node_id)
+            for ng in admin_ngs:
+                if ng.id in node_db.allowed_networks:
+                    admin_ng = ng
+                    break
+        else:
+            admin_ng = admin_ngs[0]
+
         if not admin_ng and fail_if_not_found:
             raise errors.AdminNetworkNotFound()
         return admin_ng.id
@@ -121,7 +132,7 @@ class NetworkManager(object):
         :type  num: int
         :returns: None
         """
-        admin_net_id = cls.get_admin_network_group_id()
+        admin_net_id = cls.get_admin_network_group_id(True, node_id)
         node_admin_ips = db().query(IPAddr).filter_by(
             node=node_id,
             network=admin_net_id
@@ -534,6 +545,7 @@ class NetworkManager(object):
                 continue
             network_data.append({
                 'name': net.name,
+                'gateway': net.gateway,
                 'vlan': net.vlan_start,
                 'dev': interface.name})
 
@@ -566,6 +578,7 @@ class NetworkManager(object):
                 continue
             add_net_data.append({
                 'name': net.name,
+                'gateway': net.gateway,
                 'vlan': net.vlan_start,
                 'dev': interface.name})
 
@@ -728,7 +741,7 @@ class NetworkManager(object):
     def get_admin_ips_for_interfaces(cls, node):
         """Returns mapping admin {"inteface name" => "admin ip"}
         """
-        admin_net_id = cls.get_admin_network_group_id()
+        admin_net_id = cls.get_admin_network_group_id(True, node.id)
         admin_ips = set([
             i.ip_addr for i in db().query(IPAddr).
             order_by(IPAddr.id).
