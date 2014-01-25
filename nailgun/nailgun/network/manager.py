@@ -524,6 +524,7 @@ class NetworkManager(object):
                 netmask = str(IPNetwork(net.cidr).netmask)
 
             network_data.append({
+                'id': net.id,
                 'name': net.name,
                 'vlan': net.vlan_start,
                 'ip': ip.ip_addr + '/' + prefix,
@@ -544,6 +545,7 @@ class NetworkManager(object):
             if net.name == 'fixed' and cluster_db.net_manager == 'VlanManager':
                 continue
             network_data.append({
+                'id': net.id,
                 'name': net.name,
                 'gateway': net.gateway,
                 'vlan': net.vlan_start,
@@ -577,6 +579,7 @@ class NetworkManager(object):
             if net.name == 'fixed' and cluster_db.net_manager == 'VlanManager':
                 continue
             add_net_data.append({
+                'id': net.id,
                 'name': net.name,
                 'gateway': net.gateway,
                 'vlan': net.vlan_start,
@@ -756,8 +759,13 @@ class NetworkManager(object):
     @classmethod
     def _get_admin_network(cls, node):
         """Returns dict with admin network."""
+
+        net = cls.get_admin_network_group(node_id=node.id)
         return {
-            'name': 'admin',
+            'id': net.id,
+            'name': net.name,
+            'gateway': net.gateway,
+            'vlan': net.vlan_start,
             'dev': node.admin_interface.name
         }
 
