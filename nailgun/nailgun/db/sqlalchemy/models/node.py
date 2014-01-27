@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from itertools import chain
+
 from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import DateTime
@@ -122,7 +124,7 @@ class Node(Base):
     @property
     def allowed_networks(self):
         nets = [n.allowed_networks for n in self.interfaces]
-        return [n.id for n in nets[0]]
+        return [n.id for n in chain(*nets)]
 
     @property
     def uid(self):
