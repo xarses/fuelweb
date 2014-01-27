@@ -78,7 +78,8 @@ class Node(Base):
     NODE_ERRORS = (
         'deploy',
         'provision',
-        'deletion'
+        'deletion',
+        'discover',
     )
     id = Column(Integer, primary_key=True)
     cluster_id = Column(Integer, ForeignKey('clusters.id'))
@@ -103,6 +104,7 @@ class Node(Base):
     error_msg = Column(String(255))
     timestamp = Column(DateTime, nullable=False)
     online = Column(Boolean, default=True)
+    rack_id = Column(Integer)
     role_list = relationship(
         "Role",
         secondary=NodeRoles.__table__,
@@ -227,6 +229,10 @@ class Node(Base):
         for interface in self.interfaces:
             ip_addr = interface.ip_addr
             if NetworkManager.is_ip_belongs_to_admin_subnet(ip_addr):
+                return interface
+
+        for interface in self.interfaces:
+            if interface.mac == self.mac:
                 return interface
 
         logger.warning(u'Cannot find admin interface for node '

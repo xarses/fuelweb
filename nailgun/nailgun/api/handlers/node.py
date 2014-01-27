@@ -24,6 +24,8 @@ import traceback
 
 from sqlalchemy.orm import joinedload
 
+from ipaddr import IPAddress, IPNetwork
+
 import web
 
 from nailgun.api.handlers.base import content_json
@@ -41,12 +43,11 @@ from nailgun.network.manager import NetworkManager
 from nailgun.network.topology import TopoChecker
 from nailgun import notifier
 
-
 class NodeHandler(JSONHandler):
     fields = ('id', 'name', 'meta', 'progress', 'roles', 'pending_roles',
               'status', 'mac', 'fqdn', 'ip', 'manufacturer', 'platform_name',
               'pending_addition', 'pending_deletion', 'os_platform',
-              'error_type', 'online', 'cluster')
+              'error_type', 'online', 'cluster', 'rack_id')
     model = Node
     validator = NodeValidator
 
@@ -159,7 +160,7 @@ class NodeCollectionHandler(JSONHandler):
     fields = ('id', 'name', 'meta', 'progress', 'roles', 'pending_roles',
               'status', 'mac', 'fqdn', 'ip', 'manufacturer', 'platform_name',
               'pending_addition', 'pending_deletion', 'os_platform',
-              'error_type', 'online', 'cluster')
+              'error_type', 'online', 'cluster', 'rack_id')
 
     validator = NodeValidator
 
@@ -245,6 +246,29 @@ class NodeCollectionHandler(JSONHandler):
                 node.create_meta(value)
             else:
                 setattr(node, key, value)
+
+        if not node.rack_id:
+            node.rack_id = None
+            admin_ngs = db().query(NetworkGroup).filter_by(
+                name="fuelweb_admin")
+            ip = IPAddress(node.ip)
+            for ng in admin_ngs:
+                if ip in IPNetwork(ng.cidr):
+                    node.rack_id = ng.rack_id
+                    break
+            if not node.rack_id and not node.error_type == 'discover':
+                #rack_id is still missing, this node is in error state
+                node.error_type = 'discover'
+                msg = (
+                    u"Failed to match node '{0}' with rack_id. Add "
+                    "fuelweb_admin NetworkGroup to match '{1}'"
+                    ).format(
+                    node.name or node.mac,
+                    node.ip
+                    )
+                logger.warning(msg)
+                notifier.notify("error", msg, node_id=node.id)
+
 
         db().add(node)
         db().commit()
@@ -345,6 +369,36 @@ class NodeCollectionHandler(JSONHandler):
                     notifier.notify("discover", msg, node_id=node.id)
                 db().commit()
             old_cluster_id = node.cluster_id
+
+            if not node.rack_id:
+                admin_ngs = db().query(NetworkGroup).filter_by(
+                    name="fuelweb_admin")
+                ip = IPAddress(node.ip)
+                for ng in admin_ngs:
+                    if ip in IPNetwork(ng.cidr):
+                        node.rack_id = ng.rack_id
+                        if node.error_type == 'discover':
+                            node.error_type = None
+                            node.error_msg = None
+                            notifier.notify("discover",
+                                (u"Node '{0}' rejoined with rack_id '{1}'"
+                                ).format(
+                                node.name or node.mac, node.rack_id ),
+                                node_id=node.id
+                                )
+                        break
+                if not node.rack_id and not node.error_type == 'discover':
+                    #rack_id is still missing, this node is in error state
+                    node.error_type = 'discover'
+                    msg = (
+                        u"Failed to match node '{0}' with rack_id. Add "
+                        "fuelweb_admin NetworkGroup to match '{1}'"
+                        ).format(
+                        node.name or node.mac,
+                        node.ip
+                        )
+                    logger.warning(msg)
+                    notifier.notify("error", msg, node_id=node.id)
 
             # Choosing network manager
             if nd.get('cluster_id'):

@@ -78,7 +78,7 @@ class NetworkManager(object):
         if node_id:
             node_db = db().query(Node).get(node_id)
             for ng in admin_ngs:
-                if ng.id in node_db.allowed_networks:
+                if ng.id in node_db.allowed_networks or ng.rack_id == node_db.rack_id:
                     admin_ng = ng
                     break
         else:
@@ -89,7 +89,7 @@ class NetworkManager(object):
         return admin_ng.id
 
     @classmethod
-    def get_admin_network_group(cls, fail_if_not_found=True):
+    def get_admin_network_group(cls, fail_if_not_found=True, node_id=None):
         '''Method for receiving Admin NetworkGroup.
 
         :param fail_if_not_found: Raise an error
@@ -98,9 +98,18 @@ class NetworkManager(object):
         :returns: Admin NetworkGroup or None.
         :raises: errors.AdminNetworkNotFound
         '''
-        admin_ng = db().query(NetworkGroup).filter_by(
-            name="fuelweb_admin"
-        ).first()
+        admin_ng = None
+        if node_id:
+            node = db().query(Node).get(node_id)
+            admin_ng = db().query(NetworkGroup).filter_by(
+                name="fuelweb_admin",
+                rack_id=node.rack_id
+            ).first()
+        else:
+            admin_ng = db().query(NetworkGroup).filter_by(
+                name="fuelweb_admin"
+            ).first()
+
         if not admin_ng and fail_if_not_found:
             raise errors.AdminNetworkNotFound()
         return admin_ng
@@ -260,9 +269,16 @@ class NetworkManager(object):
         if not cluster:
             raise Exception(u"Cluster id='%s' not found" % cluster_id)
 
+        rack_id = None
+        for node in cluster.nodes:
+            if 'controller' in node.all_roles or \
+               'primary-controller' in node.all_roles:
+                rack_id = node.rack_id
+                break
+
         network = db().query(NetworkGroup).\
             filter(NetworkGroup.cluster_id == cluster_id).\
-            filter_by(name=network_name).first()
+            filter_by(name=network_name, rack_id=rack_id).first()
 
         if not network:
             raise Exception(u"Network '%s' for cluster_id=%s not found." %
@@ -411,7 +427,13 @@ class NetworkManager(object):
         :type  node: Node
         :returns: List of network groups for cluster node belongs to.
         """
-        return node.cluster.network_groups
+        if node.rack_id:
+            return db().query(NetworkGroup).filter_by(
+                rack_id=node.rack_id,
+            ).filter(NetworkGroup.name != 'fuelweb_admin'
+            ).order_by(NetworkGroup.id).all()
+        else:
+            return node.cluster.network_groups
 
     @classmethod
     def get_node_networks(cls, node_id):
@@ -720,7 +742,11 @@ class NetworkManager(object):
 
     @classmethod
     def get_all_cluster_networkgroups(cls, node):
-        if node.cluster:
+        if node.rack_id:
+            return db().query(NetworkGroup).filter_by(
+                rack_id=node.rack_id
+            ).order_by(NetworkGroup.id).all()
+        elif node.cluster:
             return db().query(NetworkGroup).filter_by(
                 cluster_id=node.cluster.id
             ).order_by(NetworkGroup.id).all()

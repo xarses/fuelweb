@@ -73,6 +73,7 @@ class NetworkGroup(Base):
     cidr = Column(String(25))
     gateway = Column(String(25))
     netmask = Column(String(25), nullable=False)
+    rack_id = Column(Integer, default=0)
     ip_ranges = relationship(
         "IPAddrRange",
         backref="network_group",

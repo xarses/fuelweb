@@ -85,7 +85,7 @@ class NetworkGroupHandler(JSONHandler):
 class NetworkGroupCollectionHandler(JSONHandler):
 
     fields = ('id', 'name', 'release', 'cluster_id', 'network_size',
-              'amount', 'vlan_start', 'cidr', 'gateway', 'netmask')
+              'amount', 'vlan_start', 'cidr', 'gateway', 'netmask', 'rack_id')
 
     @classmethod
     def render(cls, ngs, fields=None):
