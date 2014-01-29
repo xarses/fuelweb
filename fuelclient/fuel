@@ -563,7 +563,7 @@ def node(params):
     else:
         acceptable_keys = ["id", "status", "name", "cluster",
                            "mac", "roles", "pending_roles", "online", 
-                           "rack_id"]
+                           "rack_id", "ip"]
         data = json_api_get_request("nodes/")
         if params.env:
             data = filter(
