@@ -51,6 +51,7 @@ class PendingNodeRoles(Base):
     node = Column(Integer, ForeignKey('nodes.id'))
 
 
+
 class Role(Base):
     __tablename__ = 'roles'
     __table_args__ = (
@@ -63,6 +64,10 @@ class Role(Base):
         nullable=False
     )
     name = Column(String(50), nullable=False)
+
+    def __repr__(self):
+        return "<Role [%i] rel:%i %s>" % (
+            self.id, self.release_id, self.name )
 
 
 class Node(Base):
@@ -122,6 +127,10 @@ class Node(Base):
     interfaces = relationship("NodeNICInterface", backref="node",
                               cascade="delete",
                               order_by="NodeNICInterface.name")
+
+    def __repr__(self):
+        return "<Node [%i] %s %s %s>" %(
+            self.id, self.status, self.ip, self.mac)
 
     @property
     def allowed_networks(self):
@@ -315,3 +324,8 @@ class NodeNICInterface(Base):
     ip_addr = Column(String(25))
     netmask = Column(String(25))
     state = Column(String(25))
+
+    def __repr__(self):
+        return "<NodeNICInterface %s:%s %s %s>" % (
+            self.node_id, self.name,
+            self.ip_addr, self.mac)

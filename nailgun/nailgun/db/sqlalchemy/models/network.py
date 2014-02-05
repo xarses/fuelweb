@@ -35,6 +35,12 @@ class IPAddr(Base):
     network_data = relationship("NetworkGroup")
     node_data = relationship("Node")
 
+    def __repr__(self):
+        return "<IPAddr [%i] %s %s>" %(
+            self.id,
+            self.ip_addr,
+            self.node_data.name)
+
 
 class IPAddrRange(Base):
     __tablename__ = 'ip_addr_ranges'
@@ -42,6 +48,13 @@ class IPAddrRange(Base):
     network_group_id = Column(Integer, ForeignKey('network_groups.id'))
     first = Column(String(25), nullable=False)
     last = Column(String(25), nullable=False)
+
+    def __repr__(self):
+        return "<IPAddrRange [%i] ng:%i %s - %s>" %(
+            self.id,
+            self.network_group_id,
+            self.first,
+            self.last)
 
 
 class NetworkGroup(Base):
@@ -84,6 +97,13 @@ class NetworkGroup(Base):
         secondary=IPAddr.__table__,
         backref="networks")
 
+    def __repr__(self):
+        return "<NetworkGroup [%i] c:%i %s:%s>" %(
+            self.id,
+            self.cluster_id,
+            self.name,
+            self.cidr)
+
     @property
     def meta(self):
         if self.cluster:
@@ -110,6 +130,12 @@ class AllowedNetworks(Base):
         nullable=False
     )
 
+    def __repr__(self):
+        return "<AllowedNetworks [%i] Net:%i Iface:%i >" %(
+            self.id,
+            self.network_id or -1,
+            self.interface_id or -1)
+
 
 class NetworkAssignment(Base):
     __tablename__ = 'net_assignments'
@@ -124,3 +150,9 @@ class NetworkAssignment(Base):
         ForeignKey('node_nic_interfaces.id', ondelete="CASCADE"),
         nullable=False
     )
+
+    def __repr__(self):
+        return "<NetworkAssignment [%i] Net:%i Iface:%i >" %(
+            self.id,
+            self.network_id or -1,
+            self.interface_id or -1)
