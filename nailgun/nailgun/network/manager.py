@@ -132,6 +132,34 @@ class NetworkManager(object):
         db().commit()
 
     @classmethod
+    def assign_admin_ip(cls, node_id):
+        '''Method for assigning admin IP address to nodes/
+
+        :param node_id: Node database ID.
+        :type  node_id: int
+        '''
+        admin_net_id = cls.get_admin_network_group_id(True, node_id)
+        node_admin_ip = db().query(IPAddr).filter_by(
+            node=node_id,
+            network=admin_net_id
+        ).first()
+        node = db().query(Node).get(node_id)
+
+        # A node must have an ip in the admin_net to set and find
+        # the admin network in the first place so we dont need to
+        # test for it again
+
+        if not node_admin_ip and not cls.is_ip_used(node.ip):
+            logger.debug(
+                u"Attempting to re-assign discovered address of {0} to {1}".format(
+                node.name, node.ip))
+            db().add(IPAddr(
+                node=node_id,
+                ip_addr=node.ip,
+                network=admin_net_id))
+            db().commit()
+
+    @classmethod
     def assign_admin_ips(cls, node_id, num=1):
         """Method for assigning admin IP addresses to nodes.
 
@@ -148,14 +176,13 @@ class NetworkManager(object):
         ).all()
 
         if not node_admin_ips or len(node_admin_ips) < num:
-            admin_net = db().query(NetworkGroup).get(admin_net_id)
             logger.debug(
                 u"Trying to assign admin ips: node=%s count=%s",
                 node_id,
                 num - len(node_admin_ips)
             )
             free_ips = cls.get_free_ips(
-                admin_net.id,
+                admin_net_id,
                 num=num - len(node_admin_ips)
             )
             logger.info(len(free_ips))
@@ -375,6 +402,23 @@ class NetworkManager(object):
         if len(free_ips) < num:
             raise errors.OutOfIPs()
         return free_ips
+
+    @classmethod
+    def is_ip_used(cls, ip_addr):
+        """Method to determine if an address is already consumed.
+
+        :param ip_addr: IP address to check.
+        :type  ip_addr: int
+        :returns: None if not taken.
+        :returns: (node_id, network_id) if taken.
+        """
+
+        ip = db().query(IPAddr).filter_by(ip_addr=ip_addr).first()
+        if not ip:
+            return None
+        else:
+            return (ip.node, ip.network)
+
 
     @classmethod
     def _get_ips_except_admin(cls, node_id=None,
