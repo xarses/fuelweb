@@ -247,8 +247,7 @@ class NodeCollectionHandler(JSONHandler):
             else:
                 setattr(node, key, value)
 
-        if not node.rack_id:
-            node.rack_id = None
+        if node.rack_id is None:
             admin_ngs = db().query(NetworkGroup).filter_by(
                 name="fuelweb_admin")
             ip = IPAddress(node.ip)
@@ -256,7 +255,7 @@ class NodeCollectionHandler(JSONHandler):
                 if ip in IPNetwork(ng.cidr):
                     node.rack_id = ng.rack_id
                     break
-            if not node.rack_id and not node.error_type == 'discover':
+            if node.rack_id is None and node.error_type is None:
                 #rack_id is still missing, this node is in error state
                 node.error_type = 'discover'
                 msg = (
@@ -268,6 +267,7 @@ class NodeCollectionHandler(JSONHandler):
                     )
                 logger.warning(msg)
                 notifier.notify("error", msg, node_id=node.id)
+                node.status = 'error'
 
 
         db().add(node)
@@ -370,7 +370,7 @@ class NodeCollectionHandler(JSONHandler):
                 db().commit()
             old_cluster_id = node.cluster_id
 
-            if not node.rack_id:
+            if node.rack_id is None:
                 admin_ngs = db().query(NetworkGroup).filter_by(
                     name="fuelweb_admin")
                 ip = IPAddress(node.ip)
@@ -386,8 +386,9 @@ class NodeCollectionHandler(JSONHandler):
                                 node.name or node.mac, node.rack_id ),
                                 node_id=node.id
                                 )
+                            node.status = 'rollback'
                         break
-                if not node.rack_id and not node.error_type == 'discover':
+                if node.rack_id is None and node.error_type is None:
                     #rack_id is still missing, this node is in error state
                     node.error_type = 'discover'
                     msg = (
@@ -399,6 +400,7 @@ class NodeCollectionHandler(JSONHandler):
                         )
                     logger.warning(msg)
                     notifier.notify("error", msg, node_id=node.id)
+                    node.status = 'error'
 
             # Choosing network manager
             if nd.get('cluster_id'):

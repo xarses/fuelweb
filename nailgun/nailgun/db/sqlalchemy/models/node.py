@@ -89,10 +89,14 @@ class Node(Base):
     id = Column(Integer, primary_key=True)
     cluster_id = Column(Integer, ForeignKey('clusters.id'))
     name = Column(Unicode(100))
-    status = Column(
+    node_status = Column(
         Enum(*NODE_STATUSES, name='node_status'),
         nullable=False,
         default='discover'
+    )
+    old_status = Column(
+        Enum(*NODE_STATUSES, name='node_old_status'),
+        default=None
     )
     meta = Column(JSON, default={})
     mac = Column(LowercaseString(17), nullable=False, unique=True)
@@ -131,6 +135,24 @@ class Node(Base):
     def __repr__(self):
         return "<Node [%i] %s %s %s>" %(
             self.id, self.status, self.ip, self.mac)
+
+    @property
+    def status(self):
+        return self.node_status
+
+    @status.setter
+    def status(self, value):
+        if value == "rollback":
+            # TODO: Do we really need to clear the state here? Do other functions clear it?
+            #if self.status == 'error':
+            #    self.error_type = None
+            #    self.error_msg = None
+            old_state = self.old_status
+            self.old_status = self.status
+            self.node_status = old_state
+        elif self.status != value:
+            self.old_status = self.status
+            self.node_status = value
 
     @property
     def allowed_networks(self):
