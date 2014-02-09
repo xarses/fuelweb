@@ -55,7 +55,8 @@ class ClusterHandler(JSONHandler):
         "is_customized",
         "net_provider",
         "net_segment_type",
-        ("release", "*")
+        ("release", "*"),
+        "release_id",
     )
 
     model = Cluster

@@ -634,7 +634,7 @@ def validate_roles(cluster_id, roles):
     roles = set(roles)
     cluster = json_api_get_request("clusters/{0}/".format(cluster_id))
     _release = json_api_get_request("releases/{0}/".format(
-        cluster["release_id"]
+        cluster["release"]["id"]
     ))
     roles_metadata = _release["roles_metadata"]
     not_valid_roles = roles - set(_release["roles"])
