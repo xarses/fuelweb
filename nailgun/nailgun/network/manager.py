@@ -310,7 +310,7 @@ class NetworkManager(object):
         if not network:
             raise Exception(u"Network '%s' for cluster_id=%s not found." %
                             (network_name, cluster_id))
-
+        # TODO: (awoodward) fix single check against admin_net_id
         admin_net_id = cls.get_admin_network_group_id()
         cluster_ips = [ne.ip_addr for ne in db().query(IPAddr).filter_by(
             network=network.id,
@@ -439,7 +439,7 @@ class NetworkManager(object):
             ips = ips.filter_by(node=node_id)
         if network_id:
             ips = ips.filter_by(network=network_id)
-
+        # TODO: (awoodward) fix single check against admin_net_id
         admin_net_id = cls.get_admin_network_group_id(False)
         if admin_net_id:
             ips = ips.filter(
@@ -800,7 +800,7 @@ class NetworkManager(object):
     def get_admin_ip_for_node(cls, node):
         """Returns first admin IP address for node
         """
-        admin_net_id = cls.get_admin_network_group_id()
+        admin_net_id = cls.get_admin_network_group_id(node_id=node.id)
         admin_ip = db().query(IPAddr).order_by(
             IPAddr.id
         ).filter_by(
